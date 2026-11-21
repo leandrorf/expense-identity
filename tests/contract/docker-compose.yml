@@ -1,0 +1,48 @@
+# IDX-6: Identity real (imagem deste repositorio) + MySQL, configurado com clientes e usuario so
+# de contrato. Usado pelo job "oidc contract" do CI; localmente:
+#
+#   docker compose -f tests/contract/docker-compose.yml up -d --build
+#   (espere http://localhost:5081/health/ready responder 200)
+#   IDENTITY_CONTRACT_BASE_URL=http://localhost:5081 dotnet test tests/Expense.Tracking.Identity.ContractTests
+#   docker compose -f tests/contract/docker-compose.yml down -v
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: contract
+      MYSQL_DATABASE: expense_identity
+      MYSQL_USER: contract
+      MYSQL_PASSWORD: contract
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ucontract", "-pcontract"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  identity:
+    build:
+      context: ../..
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__IdentityDb: "server=db;port=3306;database=expense_identity;user=contract;password=contract;"
+      OAuth__Issuer: http://localhost:5081
+      Seed__Enabled: "true"
+      Seed__Clients__contract-spa__Type: Public
+      Seed__Clients__contract-spa__RedirectUris__0: http://localhost:9999/callback
+      Seed__Clients__contract-spa__Scopes__0: openid
+      Seed__Clients__contract-spa__Scopes__1: profile
+      Seed__Clients__contract-spa__Scopes__2: offline_access
+      Seed__Clients__contract-spa__Scopes__3: contract.read
+      Seed__Clients__contract-spa__GrantTypes__0: authorization_code
+      Seed__Clients__contract-spa__GrantTypes__1: refresh_token
+      Seed__Clients__contract-service__Type: Confidential
+      Seed__Clients__contract-service__Secret: contract-secret
+      Seed__Clients__contract-service__Scopes__0: contract.internal
+      Seed__Clients__contract-service__GrantTypes__0: client_credentials
+      Seed__Users__contract__Email: contract@example.test
+      Seed__Users__contract__Password: Contract123!
+    ports:
+      - "5081:8080"

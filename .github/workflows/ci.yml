@@ -67,3 +67,41 @@ jobs:
       # So constroi: pega erro de Dockerfile antes da tag de versao.
       - name: Build
         run: docker build --tag expense-identity:ci .
+
+  # IDX-6: contrato OIDC de caixa-preta contra o Identity real (imagem deste commit + MySQL).
+  contract:
+    name: oidc contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Subir Identity + MySQL
+        run: docker compose -f tests/contract/docker-compose.yml up -d --build
+
+      - name: Esperar o Identity
+        run: |
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:5081/health/ready >/dev/null && exit 0
+            sleep 3
+          done
+          echo "Identity nao ficou pronto" >&2
+          exit 1
+
+      - name: Contrato OIDC
+        env:
+          IDENTITY_CONTRACT_BASE_URL: http://localhost:5081
+        run: dotnet test tests/Expense.Tracking.Identity.ContractTests --configuration Release
+
+      - name: Logs (em falha)
+        if: failure()
+        run: docker compose -f tests/contract/docker-compose.yml logs --no-color identity
+
+      - name: Derrubar
+        if: always()
+        run: docker compose -f tests/contract/docker-compose.yml down -v
