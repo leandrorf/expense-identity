@@ -52,6 +52,17 @@ Exemplo (`appsettings.Production.json` montado no container):
 Segredos por variável de ambiente, pelo nome: `Seed__Clients__meu-servico__Secret`,
 `Seed__Users__demo__Password`.
 
+## Imagem e versões
+
+Cada tag `vX.Y.Z` publica `ghcr.io/leandrorf/expense-identity:X.Y.Z` (workflow `Release`). Não há
+tag `latest`: quem consome fixa a versão exata. Versionamento SemVer; mudança incompatível no
+contrato OIDC (rotas, claims, formato de token, escopos existentes) é versão major.
+
+```bash
+git tag v1.2.0 && git push origin v1.2.0
+docker pull ghcr.io/leandrorf/expense-identity:1.2.0
+```
+
 ## Desenvolvimento
 
 ```bash
