@@ -6,6 +6,7 @@
     <Project Path="src/Expense.Tracking.Identity.Infrastructure/Expense.Tracking.Identity.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Expense.Tracking.Identity.ContractTests/Expense.Tracking.Identity.ContractTests.csproj" />
     <Project Path="tests/Expense.Tracking.Identity.IntegrationTests/Expense.Tracking.Identity.IntegrationTests.csproj" />
     <Project Path="tests/Expense.Tracking.Identity.UnitTests/Expense.Tracking.Identity.UnitTests.csproj" />
   </Folder>

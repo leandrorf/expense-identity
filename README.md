@@ -70,5 +70,19 @@ dotnet test Expense.Tracking.Identity.slnx   # unitários + integração (EF InM
 docker build -t expense-identity .
 ```
 
+### Contrato OIDC
+
+`tests/Expense.Tracking.Identity.ContractTests` testa, de fora, o que os consumidores usam: discovery,
+JWKS, Authorization Code + PKCE pela tela de login, refresh com rotação, client credentials e as
+claims `iss`, `aud`, `sub` e `scope` (assinatura validada pelo JWKS). Roda no job `oidc contract`
+do CI contra a imagem do commit + MySQL; sem `IDENTITY_CONTRACT_BASE_URL`, os testes ficam ignorados.
+Quebrar um desses testes de propósito é mudança de versão major.
+
+```bash
+docker compose -f tests/contract/docker-compose.yml up -d --build    # espere :5081/health/ready
+IDENTITY_CONTRACT_BASE_URL=http://localhost:5081 dotnet test tests/Expense.Tracking.Identity.ContractTests
+docker compose -f tests/contract/docker-compose.yml down -v
+```
+
 No expense.tracking, o `docker-compose.yml` declara os clientes do monorepo em
 `infra/identity/appsettings.Production.json`.
